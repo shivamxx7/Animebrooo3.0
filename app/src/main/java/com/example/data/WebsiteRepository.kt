@@ -17,6 +17,7 @@ object WebsiteRepository {
             WebsiteModel("Reanime", "https://reanime.to/")
         ),
         "JAP + SUB" to listOf(
+            WebsiteModel("Animepahe", "https://animepahe.pw/"),
             WebsiteModel("Aniwave", "https://aniwaves.ru/home"),
             WebsiteModel("Aniwatch", "https://aniwatch.co.at/"),
             WebsiteModel("9anime", "https://9anime.org.lv/"),

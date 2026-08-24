@@ -40,15 +40,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.PlayerView
-import androidx.media3.ui.AspectRatioFrameLayout
-import android.net.Uri
-import android.view.ViewGroup
-import android.widget.FrameLayout
 import coil.compose.AsyncImage
 import com.example.data.WebsiteModel
 import com.example.data.WebsiteRepository
@@ -60,8 +51,6 @@ fun HomeScreen(onWebsiteClick: (String) -> Unit) {
             .fillMaxSize()
             .background(Color(0xFF09090B))
     ) {
-        VideoBackground(modifier = Modifier.fillMaxSize())
-        
         Column(modifier = Modifier.fillMaxSize()) {
             HeaderSection()
             
@@ -301,35 +290,4 @@ fun BottomNavigationBar(modifier: Modifier = Modifier) {
         Icon(Icons.Default.Star, contentDescription = "Premium", tint = Color(0xFF71717A), modifier = Modifier.size(28.dp))
         Icon(Icons.Default.Person, contentDescription = "Profile", tint = Color(0xFF71717A), modifier = Modifier.size(28.dp))
     }
-}
-
-@Composable
-fun VideoBackground(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    val exoPlayer = remember {
-        ExoPlayer.Builder(context).build().apply {
-            val uri = Uri.parse("asset:///background.mp4")
-            setMediaItem(MediaItem.fromUri(uri))
-            repeatMode = Player.REPEAT_MODE_ALL
-            playWhenReady = true
-            videoScalingMode = androidx.media3.common.C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING
-            prepare()
-        }
-    }
-    
-    DisposableEffect(Unit) {
-        onDispose {
-            exoPlayer.release()
-        }
-    }
-    
-    AndroidView(
-        factory = { ctx ->
-            val view = android.view.LayoutInflater.from(ctx).inflate(com.example.R.layout.video_player, null, false)
-            val playerView = view.findViewById<androidx.media3.ui.PlayerView>(com.example.R.id.player_view)
-            playerView.player = exoPlayer
-            view
-        },
-        modifier = modifier
-    )
 }

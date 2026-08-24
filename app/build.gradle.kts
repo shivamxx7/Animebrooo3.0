@@ -1,5 +1,12 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
 
+import java.io.File
+import java.awt.Color
+import java.awt.RenderingHints
+import java.awt.geom.Ellipse2D
+import java.awt.image.BufferedImage
+import javax.imageio.ImageIO
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
@@ -57,6 +64,11 @@ android {
     buildConfig = true
   }
   testOptions { unitTests { isIncludeAndroidResources = true } }
+  sourceSets {
+    getByName("main") {
+      res.srcDir("$projectDir/build/generated/res/custom_icons")
+    }
+  }
   dependenciesInfo {
     includeInApk = false
     includeInBundle = true
@@ -140,3 +152,55 @@ dependencies {
   "ksp"(libs.moshi.kotlin.codegen)
 }
 // Workaround for GitHub Actions CI build
+
+tasks.register("generateAppIcons") {
+    notCompatibleWithConfigurationCache("Reads directly from files and does custom I/O")
+    doLast {
+        val srcFile = file("$rootDir/25645c54235013738fff1a89b08cbb5af18fb18afa3a9115783037abc6e00d6b.png")
+        if (!srcFile.exists()) throw GradleException("Source logo not found at ${srcFile.absolutePath}")
+        val img = ImageIO.read(srcFile) ?: throw GradleException("Could not decode source logo")
+
+        val densities = mapOf(
+            "mdpi" to (48 to 108), "hdpi" to (72 to 162), "xhdpi" to (96 to 216),
+            "xxhdpi" to (144 to 324), "xxxhdpi" to (192 to 432)
+        )
+
+        densities.forEach { (density, sizes) ->
+            val (legacySize, fgSize) = sizes
+            val dir = file("$projectDir/build/generated/res/custom_icons/mipmap-$density")
+            dir.mkdirs()
+
+            fun scaledDraw(g: java.awt.Graphics2D, canvas: Int, scale: Double) {
+                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+                val ratio = minOf(canvas.toDouble() / img.width, canvas.toDouble() / img.height) * scale
+                val w = (img.width * ratio).toInt(); val h = (img.height * ratio).toInt()
+                g.drawImage(img, (canvas - w) / 2, (canvas - h) / 2, w, h, null)
+            }
+
+            val square = BufferedImage(legacySize, legacySize, BufferedImage.TYPE_INT_ARGB)
+            val g1 = square.createGraphics()
+            g1.color = Color.BLACK; g1.fillRect(0, 0, legacySize, legacySize)
+            scaledDraw(g1, legacySize, 0.9); g1.dispose()
+            ImageIO.write(square, "PNG", File(dir, "ic_launcher.png"))
+
+            val round = BufferedImage(legacySize, legacySize, BufferedImage.TYPE_INT_ARGB)
+            val g2 = round.createGraphics()
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            g2.clip = Ellipse2D.Float(0f, 0f, legacySize.toFloat(), legacySize.toFloat())
+            g2.drawImage(square, 0, 0, null); g2.dispose()
+            ImageIO.write(round, "PNG", File(dir, "ic_launcher_round.png"))
+
+            val fg = BufferedImage(fgSize, fgSize, BufferedImage.TYPE_INT_ARGB)
+            val g3 = fg.createGraphics()
+            scaledDraw(g3, fgSize, 0.62); g3.dispose()
+            ImageIO.write(fg, "PNG", File(dir, "ic_launcher_foreground.png"))
+        }
+
+        val check = file("$projectDir/build/generated/res/custom_icons/mipmap-xxxhdpi/ic_launcher.png")
+        if (check.length() == 0L) throw GradleException("Icon generation ran but output is still empty")
+        println("App icons regenerated dynamically (${check.length()} bytes for xxxhdpi ic_launcher.png)")
+    }
+}
+
+tasks.named("preBuild") { dependsOn("generateAppIcons") }

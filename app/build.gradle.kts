@@ -14,11 +14,11 @@ android {
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "com.aistudio.animebrowser.qxyz"
+    applicationId = "com.aistudio.animebrowser.v2.qxyz"
     minSdk = 24
     targetSdk = 36
-    versionCode = 5
-    versionName = "1.4"
+    versionCode = 100
+    versionName = "1.9"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }

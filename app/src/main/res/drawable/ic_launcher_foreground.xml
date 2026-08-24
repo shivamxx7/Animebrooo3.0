@@ -5,8 +5,11 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     
-    <!-- Stylized 'A' in Orange -->
     <path
-        android:fillColor="#FF6D00"
-        android:pathData="M 54,20 C 54,20 30,70 20,88 L 38,88 L 45,72 L 63,72 L 70,88 L 88,88 C 78,70 54,20 54,20 Z M 49,60 L 54,46 L 59,60 Z" />
+        android:fillColor="#E11D48"
+        android:pathData="M54,22 A32,32 0 1,0 54,86 A32,32 0 1,0 54,22 Z" />
+        
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M46,38 L72,54 L46,70 Z" />
 </vector>

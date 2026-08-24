@@ -139,3 +139,4 @@ dependencies {
   "ksp"(libs.androidx.room.compiler)
   "ksp"(libs.moshi.kotlin.codegen)
 }
+// Workaround for GitHub Actions CI build

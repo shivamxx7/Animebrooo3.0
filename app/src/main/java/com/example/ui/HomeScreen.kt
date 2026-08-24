@@ -12,7 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
@@ -182,7 +182,7 @@ fun CategoryRow(categoryName: String, websites: List<WebsiteModel>, onWebsiteCli
             ) {
                 Text(text = "View All", color = Color(0xFFA1A1AA), fontSize = 10.sp, fontWeight = FontWeight.Medium)
                 Icon(
-                    Icons.Default.KeyboardArrowRight,
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
                     tint = Color(0xFFA1A1AA),
                     modifier = Modifier.size(16.dp)

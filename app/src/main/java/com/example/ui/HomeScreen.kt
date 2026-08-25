@@ -261,6 +261,7 @@ fun WebsiteCard(
     val textColor = Color.White
     val domain = website.url.replace("https://", "").replace("http://", "").substringBefore("/")
     val isKissanime = website.name.equals("Kissanime", ignoreCase = true)
+    val isAniwave = website.name.equals("Aniwave", ignoreCase = true)
     val faviconUrl = "https://www.google.com/s2/favicons?domain=${domain}&sz=256"
     
     Card(
@@ -280,11 +281,18 @@ fun WebsiteCard(
             verticalArrangement = Arrangement.Center
         ) {
             if (isKissanime) {
-                Image(
-                    painter = painterResource(id = R.drawable.kissanime_logo),
+                AsyncImage(
+                    model = R.drawable.kissanime_logo,
                     contentDescription = website.name,
-                    modifier = Modifier.size(76.dp),
-                    contentScale = ContentScale.Fit
+                    modifier = Modifier.size(76.dp).clip(RoundedCornerShape(16.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            } else if (isAniwave) {
+                AsyncImage(
+                    model = R.drawable.aniwave_logo,
+                    contentDescription = website.name,
+                    modifier = Modifier.size(76.dp).clip(RoundedCornerShape(16.dp)),
+                    contentScale = ContentScale.Crop
                 )
             } else {
                 AsyncImage(

@@ -410,7 +410,7 @@ fun IconGraphic(index: Int, baseColor: Color) {
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
-                    model = R.drawable.rem_profile,
+                    model = "https://i.postimg.cc/SQW8Mc40/1000106315-Photoroom.png",
                     contentDescription = "Rem",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop

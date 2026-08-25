@@ -32,6 +32,17 @@ class MainActivity : ComponentActivity() {
         windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
 
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            val display = windowManager.defaultDisplay
+            val modes = display.supportedModes
+            val highestMode = modes.maxByOrNull { it.refreshRate }
+            if (highestMode != null) {
+                val params = window.attributes
+                params.preferredDisplayModeId = highestMode.modeId
+                window.attributes = params
+            }
+        }
+
         setContent {
             MyApplicationTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->

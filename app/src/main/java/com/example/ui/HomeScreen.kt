@@ -28,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -379,12 +380,11 @@ fun IconGraphic(index: Int, baseColor: Color) {
             Box(
                 modifier = Modifier
                     .size(24.dp)
-                    .border(1.5.dp, baseColor, CircleShape)
                     .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
-                    model = "https://s4.anilist.co/file/anilistcdn/character/large/b88572-Wrs2K1v1i0vY.png",
+                    model = "https://i.postimg.cc/SQW8Mc40/1000106315-Photoroom.png",
                     contentDescription = "Rem",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop

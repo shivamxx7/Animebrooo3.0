@@ -5,7 +5,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -41,6 +44,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
+import com.example.R
 import coil.compose.AsyncImage
 import com.example.data.WebsiteModel
 import androidx.compose.animation.core.animateFloatAsState
@@ -193,42 +199,52 @@ fun CategoryRow(categoryName: String, websites: List<WebsiteModel>, onWebsiteCli
             }
         }
         
-        val pagerState = rememberPagerState(
-            initialPage = if (websites.size >= 2) 1 else 0,
-            pageCount = { websites.size }
-        )
+        val listState = rememberLazyListState()
         val configuration = LocalConfiguration.current
         val screenWidth = configuration.screenWidthDp.dp
         val cardWidth = 150.dp
         val horizontalPadding = (screenWidth - cardWidth) / 2
-        
-        HorizontalPager(
-            state = pagerState,
+
+        LazyRow(
+            state = listState,
             contentPadding = PaddingValues(horizontal = horizontalPadding),
-            pageSpacing = 16.dp,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            flingBehavior = rememberSnapFlingBehavior(lazyListState = listState),
             modifier = Modifier.fillMaxWidth()
-        ) { page ->
-            val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
-            val absOffset = kotlin.math.abs(pageOffset)
-            
-            fun lerp(start: Float, stop: Float, fraction: Float): Float = (1 - fraction) * start + fraction * stop
-            val scale = lerp(0.82f, 1f, 1f - absOffset.coerceIn(0f, 1f))
-            val alpha = lerp(0.5f, 1f, 1f - absOffset.coerceIn(0f, 1f))
-            
-            val isCenter = absOffset < 0.5f
-            
-            WebsiteCard(
-                website = websites[page],
-                accentColor = accentColor,
-                isCenter = isCenter,
-                modifier = Modifier
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                        this.alpha = alpha
+        ) {
+            items(websites.size) { index ->
+                val website = websites[index]
+                
+                WebsiteCard(
+                    website = website,
+                    accentColor = accentColor,
+                    isCenter = true,
+                    modifier = Modifier.graphicsLayer {
+                        val layoutInfo = listState.layoutInfo
+                        val visibleItem = layoutInfo.visibleItemsInfo.find { it.index == index }
+                        if (visibleItem != null) {
+                            val viewportCenter = layoutInfo.viewportStartOffset + layoutInfo.viewportSize.width / 2f
+                            val itemCenter = visibleItem.offset + visibleItem.size / 2f
+                            val distance = kotlin.math.abs(viewportCenter - itemCenter)
+                            
+                            val maxDistance = visibleItem.size.toFloat()
+                            val fraction = (distance / maxDistance).coerceIn(0f, 1f)
+                            
+                            val scale = (1 - fraction) * 1f + fraction * 0.82f
+                            val itemAlpha = (1 - fraction) * 1f + fraction * 0.5f
+                            
+                            scaleX = scale
+                            scaleY = scale
+                            this.alpha = itemAlpha
+                        } else {
+                            scaleX = 0.82f
+                            scaleY = 0.82f
+                            this.alpha = 0.5f
+                        }
                     },
-                onClick = { onWebsiteClick(websites[page].url) }
-            )
+                    onClick = { onWebsiteClick(website.url) }
+                )
+            }
         }
     }
 }
@@ -244,6 +260,7 @@ fun WebsiteCard(
     val bgColor = Color(0xFF1C1A14)
     val textColor = Color.White
     val domain = website.url.replace("https://", "").replace("http://", "").substringBefore("/")
+    val isKissanime = website.name.equals("Kissanime", ignoreCase = true)
     val faviconUrl = "https://www.google.com/s2/favicons?domain=${domain}&sz=256"
     
     Card(
@@ -262,12 +279,21 @@ fun WebsiteCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            AsyncImage(
-                model = faviconUrl,
-                contentDescription = website.name,
-                modifier = Modifier.size(76.dp),
-                contentScale = ContentScale.Fit
-            )
+            if (isKissanime) {
+                Image(
+                    painter = painterResource(id = R.drawable.kissanime_logo),
+                    contentDescription = website.name,
+                    modifier = Modifier.size(76.dp),
+                    contentScale = ContentScale.Fit
+                )
+            } else {
+                AsyncImage(
+                    model = faviconUrl,
+                    contentDescription = website.name,
+                    modifier = Modifier.size(76.dp),
+                    contentScale = ContentScale.Fit
+                )
+            }
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = website.name,

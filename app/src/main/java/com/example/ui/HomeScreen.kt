@@ -410,7 +410,7 @@ fun IconGraphic(index: Int, baseColor: Color) {
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
-                    model = "https://i.postimg.cc/SQW8Mc40/1000106315-Photoroom.png?v=2",
+                    model = "https://i.postimg.cc/8cQYRgf0/1000106315-Photoroom.png?v=4",
                     contentDescription = "Rem",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop

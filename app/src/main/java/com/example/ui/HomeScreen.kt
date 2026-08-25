@@ -281,9 +281,9 @@ fun WebsiteCard(
             val isAniwave = website.name.equals("Aniwave", ignoreCase = true)
             if (isAniwave) {
                 AsyncImage(
-                    model = "https://i.postimg.cc/j5yqhv9Q/1000106545-Photoroom.png",
+                    model = "https://i.postimg.cc/j5yqhv9Q/1000106545-Photoroom.png?v=2",
                     contentDescription = website.name,
-                    modifier = Modifier.size(76.dp).clip(RoundedCornerShape(16.dp)),
+                    modifier = Modifier.size(76.dp).clip(RoundedCornerShape(16.dp)), // force update
                     contentScale = ContentScale.Crop
                 )
             } else {
@@ -410,7 +410,7 @@ fun IconGraphic(index: Int, baseColor: Color) {
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
-                    model = "https://i.postimg.cc/SQW8Mc40/1000106315-Photoroom.png",
+                    model = "https://i.postimg.cc/SQW8Mc40/1000106315-Photoroom.png?v=2",
                     contentDescription = "Rem",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop

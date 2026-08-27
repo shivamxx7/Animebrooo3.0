@@ -290,10 +290,10 @@ fun WebsiteCard(
         ) {
             val isAniwave = website.name.equals("Aniwave", ignoreCase = true)
             if (isAniwave) {
-                AsyncImage(
-                    model = "https://i.postimg.cc/j5yqhv9Q/1000106545-Photoroom.png?v=2",
+                Image(
+                    painter = painterResource(id = R.drawable.logo_aniwave),
                     contentDescription = website.name,
-                    modifier = Modifier.size(76.dp).clip(RoundedCornerShape(16.dp)), // force update
+                    modifier = Modifier.size(76.dp).clip(RoundedCornerShape(16.dp)),
                     contentScale = ContentScale.Crop
                 )
             } else {

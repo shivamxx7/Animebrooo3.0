@@ -63,6 +63,14 @@ import com.example.data.WebsiteRepository
 
 @Composable
 fun HomeScreen(onWebsiteClick: (String) -> Unit) {
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    
+    val currentCategories = when (selectedTabIndex) {
+        0 -> WebsiteRepository.animeCategories
+        1 -> WebsiteRepository.ottCategories
+        else -> emptyMap()
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -77,13 +85,15 @@ fun HomeScreen(onWebsiteClick: (String) -> Unit) {
                     .weight(1f),
                 contentPadding = PaddingValues(bottom = 120.dp, top = 8.dp)
             ) {
-                items(WebsiteRepository.categories.entries.toList()) { (categoryName, websites) ->
+                items(currentCategories.entries.toList()) { (categoryName, websites) ->
                     CategoryRow(categoryName, websites, onWebsiteClick)
                     Spacer(modifier = Modifier.height(24.dp))
                 }
             }
         }
         BottomNavigationBar(
+            selectedIndex = selectedTabIndex,
+            onIndexSelected = { selectedTabIndex = it },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 24.dp)
@@ -307,9 +317,11 @@ fun WebsiteCard(
 }
 
 @Composable
-fun BottomNavigationBar(modifier: Modifier = Modifier) {
-    var selectedIndex by remember { mutableIntStateOf(0) }
-    
+fun BottomNavigationBar(
+    selectedIndex: Int,
+    onIndexSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val items = listOf(
         "ANIME" to Color(0xFF4FC3F7),
         "OTT" to Color(0xFFB388FF),
@@ -338,7 +350,7 @@ fun BottomNavigationBar(modifier: Modifier = Modifier) {
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
-                    ) { selectedIndex = index },
+                    ) { onIndexSelected(index) },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -409,8 +421,8 @@ fun IconGraphic(index: Int, baseColor: Color) {
                     .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                AsyncImage(
-                    model = "https://drive.google.com/uc?id=1fTA-YsnfNk7roa3N4iMjU-OjSIdyF8Kp",
+                Image(
+                    painter = painterResource(id = R.drawable.img_rem),
                     contentDescription = "Rem",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop

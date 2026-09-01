@@ -83,7 +83,7 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
 
     val adDomains = listOf(
         "doubleclick.net", "googleadservices.com", "adsafeprotected.com", "popads.net",
-        "youtube.com", "youtu.be", "play.google.com", "facebook.com", "twitter.com", "instagram.com"
+        "adsterra.com", "onclickads.net", "exoclick.com", "hilltopads.net", "propellerads.com"
     )
 
     val isAnimeSite = remember(url) {
@@ -125,6 +125,7 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                     settings.loadWithOverviewMode = true
                     settings.allowFileAccess = true
                     settings.allowContentAccess = true
+                    settings.setSupportMultipleWindows(true)
                     
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
                         WebView.setWebContentsDebuggingEnabled(true)
@@ -155,17 +156,21 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                             
                             val requestedHost = request?.url?.host ?: return true
 
-                            if (isAnimeSite) {
-                                // For Anime sites, apply strict domain whitelist to prevent malicious popups
-                                if (request?.isForMainFrame == false) return false
-                                val isAllowed = WebsiteRepository.allowedDomains.any { allowed ->
-                                    requestedHost.contains(allowed.removePrefix("www."))
+                            if (request.isForMainFrame) {
+                                val currentHost = try { java.net.URI(view?.url ?: "").host?.removePrefix("www.") ?: "" } catch(e: Exception) { "" }
+                                val requestedDomain = requestedHost.removePrefix("www.")
+                                
+                                val isAllowed = WebsiteRepository.allowedDomains.any { requestedDomain.contains(it) } || 
+                                                (currentHost.isNotEmpty() && requestedDomain.contains(currentHost)) ||
+                                                requestedDomain.contains("1flex.org") ||
+                                                requestedDomain.contains("skyflixer.fun")
+                                                
+                                if (!isAllowed) {
+                                    return true // Block main frame navigation to unverified 3rd-party domains
                                 }
-                                return !isAllowed
-                            } else {
-                                // For OTT sites (e.g. Pantyflix), allow redirects/iframes for video players
-                                return adDomains.any { requestedUrl.contains(it) }
                             }
+                            
+                            return adDomains.any { requestedUrl.contains(it) }
                         }
 
                         override fun shouldInterceptRequest(
@@ -191,14 +196,29 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                             
                             val js = """
                                 javascript:(function() {
-                                    var elements = document.querySelectorAll('.ad-container');
-                                    for (var i = 0; i < elements.length; i++) {
-                                        elements[i].style.display = 'none';
-                                    }
                                     if (window.location.href.indexOf('animeflix') !== -1) {
                                         var style = document.createElement('style');
                                         style.innerHTML = 'html, body, #___gatsby, #gatsby-focus-wrapper { height: auto !important; min-height: 100vh !important; overflow: visible !important; overflow-y: auto !important; }';
                                         document.head.appendChild(style);
+                                    }
+                                    if (!window.__searchFixApplied) {
+                                        window.__searchFixApplied = true;
+                                        document.addEventListener('keydown', function(e) {
+                                            if (e.key === 'Enter' || e.keyCode === 13 || e.keyCode === 229) {
+                                                var el = document.activeElement;
+                                                if (el && el.tagName === 'INPUT') {
+                                                    var form = el.closest('form');
+                                                    if (form) {
+                                                        var btn = form.querySelector('button[type="submit"]');
+                                                        if (btn) { btn.click(); } else { form.submit(); }
+                                                    } else {
+                                                        // Fallback: try to find a nearby button
+                                                        var btn = el.parentElement.querySelector('button');
+                                                        if (btn) btn.click();
+                                                    }
+                                                }
+                                            }
+                                        });
                                     }
                                 })()
                             """.trimIndent()
@@ -208,6 +228,27 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                     }
 
                     webChromeClient = object : WebChromeClient() {
+
+                        override fun onCreateWindow(
+                            view: WebView?,
+                            isDialog: Boolean,
+                            isUserGesture: Boolean,
+                            resultMsg: android.os.Message?
+                        ): Boolean {
+                            if (view != null && resultMsg != null) {
+                                val dummyWebView = WebView(view.context)
+                                dummyWebView.webViewClient = object : WebViewClient() {
+                                    override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                                        return true // Cancel all loading inside dummy WebView
+                                    }
+                                }
+                                val transport = resultMsg.obj as WebView.WebViewTransport
+                                transport.webView = dummyWebView
+                                resultMsg.sendToTarget()
+                                return true
+                            }
+                            return false
+                        }
 
                         override fun onProgressChanged(view: WebView?, newProgress: Int) {
                             super.onProgressChanged(view, newProgress)

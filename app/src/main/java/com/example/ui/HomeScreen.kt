@@ -99,7 +99,7 @@ fun HomeScreen(onWebsiteClick: (String) -> Unit) {
             selectedIndex = selectedTabIndex,
             onIndexSelected = { 
                 if (it == 3) {
-                    onWebsiteClick("https://www.1flex.org/")
+                    onWebsiteClick("https://www.1shows.org/")
                 } else {
                     selectedTabIndex = it 
                 }

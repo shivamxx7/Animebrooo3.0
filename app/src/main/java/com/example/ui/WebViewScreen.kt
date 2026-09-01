@@ -157,17 +157,7 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                             val requestedHost = request?.url?.host ?: return true
 
                             if (request.isForMainFrame) {
-                                val currentHost = try { java.net.URI(view?.url ?: "").host?.removePrefix("www.") ?: "" } catch(e: Exception) { "" }
-                                val requestedDomain = requestedHost.removePrefix("www.")
-                                
-                                val isAllowed = WebsiteRepository.allowedDomains.any { requestedDomain.contains(it) } || 
-                                                (currentHost.isNotEmpty() && requestedDomain.contains(currentHost)) ||
-                                                requestedDomain.contains("1flex.org") ||
-                                                requestedDomain.contains("skyflixer.fun")
-                                                
-                                if (!isAllowed) {
-                                    return true // Block main frame navigation to unverified 3rd-party domains
-                                }
+                                // Relying purely on ad blacklist to allow 3rd party video players
                             }
                             
                             return adDomains.any { requestedUrl.contains(it) }
@@ -201,25 +191,6 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                                         style.innerHTML = 'html, body, #___gatsby, #gatsby-focus-wrapper { height: auto !important; min-height: 100vh !important; overflow: visible !important; overflow-y: auto !important; }';
                                         document.head.appendChild(style);
                                     }
-                                    if (!window.__searchFixApplied) {
-                                        window.__searchFixApplied = true;
-                                        document.addEventListener('keydown', function(e) {
-                                            if (e.key === 'Enter' || e.keyCode === 13 || e.keyCode === 229) {
-                                                var el = document.activeElement;
-                                                if (el && el.tagName === 'INPUT') {
-                                                    var form = el.closest('form');
-                                                    if (form) {
-                                                        var btn = form.querySelector('button[type="submit"]');
-                                                        if (btn) { btn.click(); } else { form.submit(); }
-                                                    } else {
-                                                        // Fallback: try to find a nearby button
-                                                        var btn = el.parentElement.querySelector('button');
-                                                        if (btn) btn.click();
-                                                    }
-                                                }
-                                            }
-                                        });
-                                    }
                                 })()
                             """.trimIndent()
                             
@@ -236,14 +207,19 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                             resultMsg: android.os.Message?
                         ): Boolean {
                             if (view != null && resultMsg != null) {
-                                val dummyWebView = WebView(view.context)
-                                dummyWebView.webViewClient = object : WebViewClient() {
-                                    override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                                        return true // Cancel all loading inside dummy WebView
+                                val newWebView = WebView(view.context)
+                                newWebView.webViewClient = object : WebViewClient() {
+                                    override fun shouldOverrideUrlLoading(v: WebView?, request: WebResourceRequest?): Boolean {
+                                        val requestedUrl = request?.url.toString()
+                                        val isAd = adDomains.any { requestedUrl.contains(it) }
+                                        if (!isAd) {
+                                            view.loadUrl(requestedUrl)
+                                        }
+                                        return true // Cancel loading in the new/dummy WebView
                                     }
                                 }
                                 val transport = resultMsg.obj as WebView.WebViewTransport
-                                transport.webView = dummyWebView
+                                transport.webView = newWebView
                                 resultMsg.sendToTarget()
                                 return true
                             }

@@ -110,12 +110,12 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
     var isLoading by remember { mutableStateOf(true) }
     var customViewCallback: WebChromeClient.CustomViewCallback? by remember { mutableStateOf(null) }
     var isLocked by remember { mutableStateOf(false) }
-    var showSettingsFab by remember { mutableStateOf(true) }
+    var showSettingsFab by remember { mutableStateOf(false) }
     var showControlPanel by remember { mutableStateOf(false) }
     var fabTimer by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(showSettingsFab, fabTimer, showControlPanel, isLocked) {
-        if (showSettingsFab && !showControlPanel && isLocked) {
+    LaunchedEffect(showSettingsFab, fabTimer, showControlPanel) {
+        if (showSettingsFab && !showControlPanel) {
             delay(3000)
             showSettingsFab = false
         }
@@ -150,7 +150,21 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
         }
     }
 
-    androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
+    androidx.compose.foundation.layout.Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                        if (event.changes.any { it.pressed && !it.previousPressed }) {
+                            showSettingsFab = true
+                            fabTimer++
+                        }
+                    }
+                }
+            }
+    ) {
         AndroidView(
             factory = { context ->
                 WebView(context).apply {
@@ -431,7 +445,7 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                         }
                     },
                     modifier = Modifier
-                        .background(Color(0xFF222222).copy(alpha = if (isLocked) 0.9f else 0.5f), CircleShape)
+                        .background(Color(0xFF222222).copy(alpha = 0.9f), CircleShape)
                         .padding(8.dp)
                 ) {
                     Icon(
@@ -454,7 +468,11 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
-                        ) { showControlPanel = false },
+                        ) {
+                            showControlPanel = false
+                            showSettingsFab = true
+                            fabTimer++
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     ControlPanelContent(

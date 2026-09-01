@@ -109,15 +109,13 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
     var customView: View? by remember { mutableStateOf(null) }
     var isLoading by remember { mutableStateOf(true) }
     var customViewCallback: WebChromeClient.CustomViewCallback? by remember { mutableStateOf(null) }
-    var isControlsVisible by remember { mutableStateOf(false) }
-
     var isLocked by remember { mutableStateOf(false) }
-    var showSettingsFab by remember { mutableStateOf(false) }
+    var showSettingsFab by remember { mutableStateOf(true) }
     var showControlPanel by remember { mutableStateOf(false) }
     var fabTimer by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(showSettingsFab, fabTimer, showControlPanel) {
-        if (showSettingsFab && !showControlPanel) {
+    LaunchedEffect(showSettingsFab, fabTimer, showControlPanel, isLocked) {
+        if (showSettingsFab && !showControlPanel && isLocked) {
             delay(3000)
             showSettingsFab = false
         }
@@ -342,114 +340,6 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
             modifier = Modifier.fillMaxSize().alpha(if (customView != null) 0f else 1f)
         )
 
-        if (customView == null) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Back Button
-                AnimatedVisibility(
-                    visible = isControlsVisible,
-                    enter = slideInHorizontally { -it } + expandHorizontally() + fadeIn(),
-                    exit = slideOutHorizontally { -it } + shrinkHorizontally() + fadeOut()
-                ) {
-                    IconButton(
-                        onClick = {
-                            if (webView?.canGoBack() == true) {
-                                webView?.goBack()
-                            } else {
-                                onBack()
-                            }
-                        },
-                        modifier = Modifier
-                            .background(Color.Black.copy(alpha = 0.6f), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                // Refresh and Home Buttons
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    AnimatedVisibility(
-                        visible = isControlsVisible,
-                        enter = slideInHorizontally { it } + expandHorizontally() + fadeIn(),
-                        exit = slideOutHorizontally { it } + shrinkHorizontally() + fadeOut()
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            IconButton(
-                                onClick = { webView?.reload() },
-                                modifier = Modifier
-                                    .background(Color.Black.copy(alpha = 0.6f), CircleShape)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Refresh,
-                                    contentDescription = "Refresh",
-                                    tint = Color.White
-                                )
-                            }
-                            
-                            IconButton(
-                                onClick = {
-                                    activity?.let {
-                                        it.requestedOrientation = if (it.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || it.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE) {
-                                            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                                        } else {
-                                            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                                        }
-                                    }
-                                },
-                                modifier = Modifier
-                                    .background(Color.Black.copy(alpha = 0.6f), CircleShape)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Refresh,
-                                    contentDescription = "Rotate Screen",
-                                    tint = Color.White
-                                )
-                            }
-
-                            IconButton(
-                                onClick = { onBack() },
-                                modifier = Modifier
-                                    .background(Color.Black.copy(alpha = 0.6f), CircleShape)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Home,
-                                    contentDescription = "Home",
-                                    tint = Color.White
-                                )
-                            }
-                        }
-                    }
-
-                    IconButton(
-                        onClick = { isControlsVisible = !isControlsVisible },
-                        modifier = Modifier
-                            .background(Color.Black.copy(alpha = 0.6f), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = if (isControlsVisible) Icons.Default.KeyboardArrowRight else Icons.Default.KeyboardArrowLeft,
-                            contentDescription = "Toggle Controls",
-                            tint = Color.White
-                        )
-                    }
-                }
-            }
-        }
 
         if (isLoading) {
             androidx.compose.foundation.layout.Box(
@@ -519,22 +409,6 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                         detectDragGestures { change, _ -> change.consume() }
                     }
             )
-        } else if (!showControlPanel) {
-            androidx.compose.foundation.layout.Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                val event = awaitPointerEvent(PointerEventPass.Initial)
-                                if (event.type == PointerEventType.Press) {
-                                    showSettingsFab = true
-                                    fabTimer++
-                                }
-                            }
-                        }
-                    }
-            )
         }
 
         androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
@@ -543,22 +417,21 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                 enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
                 exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut(),
                 modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 24.dp)
-                    .padding(bottom = 64.dp)
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 24.dp, bottom = 48.dp)
             ) {
                 IconButton(
                     onClick = {
                         if (isLocked) {
                             isLocked = false
-                            showSettingsFab = false
+                            showSettingsFab = true
                         } else {
                             showControlPanel = true
                             showSettingsFab = false
                         }
                     },
                     modifier = Modifier
-                        .background(Color(0xFF222222).copy(alpha = 0.9f), CircleShape)
+                        .background(Color(0xFF222222).copy(alpha = if (isLocked) 0.9f else 0.5f), CircleShape)
                         .padding(8.dp)
                 ) {
                     Icon(

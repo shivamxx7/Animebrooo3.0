@@ -287,7 +287,24 @@ fun WebsiteCard(
     val bgColor = Color(0xFF1C1A14)
     val textColor = Color.White
     val domain = website.url.replace("https://", "").replace("http://", "").substringBefore("/")
-    val faviconUrl = "https://www.google.com/s2/favicons?domain=${domain}&sz=256"
+    
+    val ottDomains = mapOf(
+        "Netflix" to "netflix.com",
+        "Crunchyroll" to "crunchyroll.com",
+        "Prime Video" to "primevideo.com",
+        "Prime" to "primevideo.com",
+        "Disney+" to "disneyplus.com",
+        "Apple TV" to "tv.apple.com",
+        "Hulu" to "hulu.com",
+        "MGM+" to "mgmplus.com",
+        "HBO" to "hbo.com",
+        "Hotstar" to "hotstar.com",
+        "Zee5" to "zee5.com",
+        "Sony LIV" to "sonyliv.com"
+    )
+    
+    val actualDomain = ottDomains[website.name] ?: domain
+    val faviconUrl = "https://www.google.com/s2/favicons?domain=${actualDomain}&sz=256"
     
     Card(
         modifier = modifier

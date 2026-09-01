@@ -15,7 +15,7 @@ object WebsiteRepository {
         ),
         "JAP + ENG + SUB" to listOf(
             WebsiteModel("Yeanime", "https://yenime.net/"),
-            WebsiteModel("Reanime", "https://reanime.to/home"),
+            WebsiteModel("Hianime", "https://hianime.ro/home"),
             WebsiteModel("Animeflix", "https://animeflix.app/"),
             WebsiteModel("Anistream", "https://anistream.one/home")
         ),

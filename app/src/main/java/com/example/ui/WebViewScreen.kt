@@ -157,7 +157,17 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                             val requestedHost = request?.url?.host ?: return true
 
                             if (request.isForMainFrame) {
-                                // Relying purely on ad blacklist to allow 3rd party video players
+                                val currentHost = try { java.net.URI(view?.url ?: "").host?.removePrefix("www.") ?: "" } catch(e: Exception) { "" }
+                                val requestedDomain = requestedHost.removePrefix("www.")
+                                
+                                val isAllowed = WebsiteRepository.allowedDomains.any { requestedDomain.contains(it) } || 
+                                                (currentHost.isNotEmpty() && requestedDomain.contains(currentHost)) ||
+                                                requestedDomain.contains("1shows.org") ||
+                                                requestedDomain.contains("skyflixer.fun")
+                                                
+                                if (!isAllowed) {
+                                    return true // Block main frame navigation to unverified 3rd-party domains
+                                }
                             }
                             
                             return adDomains.any { requestedUrl.contains(it) }
@@ -186,10 +196,28 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                             
                             val js = """
                                 javascript:(function() {
+                                    if (!window.__targetBlankFix) {
+                                        window.__targetBlankFix = setInterval(function() {
+                                            document.querySelectorAll('a[target="_blank"]').forEach(function(a) {
+                                                if (a.href && a.href.includes(window.location.hostname)) {
+                                                    a.removeAttribute('target');
+                                                }
+                                            });
+                                        }, 500);
+                                    }
+                                    
                                     if (window.location.href.indexOf('animeflix') !== -1) {
-                                        var style = document.createElement('style');
-                                        style.innerHTML = 'html, body, #___gatsby, #gatsby-focus-wrapper { height: auto !important; min-height: 100vh !important; overflow: visible !important; overflow-y: auto !important; }';
-                                        document.head.appendChild(style);
+                                        if (!window.__afFixInterval) {
+                                            window.__afFixInterval = setInterval(function() {
+                                                var existingStyle = document.getElementById('af-fix');
+                                                if (!existingStyle) {
+                                                    var style = document.createElement('style');
+                                                    style.id = 'af-fix';
+                                                    style.innerHTML = 'html, body { overflow-y: auto !important; overflow-x: hidden !important; }';
+                                                    document.head.appendChild(style);
+                                                }
+                                            }, 500);
+                                        }
                                     }
                                 })()
                             """.trimIndent()
@@ -207,19 +235,29 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                             resultMsg: android.os.Message?
                         ): Boolean {
                             if (view != null && resultMsg != null) {
-                                val newWebView = WebView(view.context)
-                                newWebView.webViewClient = object : WebViewClient() {
+                                val dummyWebView = WebView(view.context)
+                                dummyWebView.webViewClient = object : WebViewClient() {
                                     override fun shouldOverrideUrlLoading(v: WebView?, request: WebResourceRequest?): Boolean {
                                         val requestedUrl = request?.url.toString()
-                                        val isAd = adDomains.any { requestedUrl.contains(it) }
-                                        if (!isAd) {
+                                        val requestedHost = request?.url?.host ?: ""
+                                        
+                                        val isAd = adDomains.any { requestedUrl.contains(it) } || requestedUrl.contains("youtube.com")
+                                        val isAllowedDomain = WebsiteRepository.allowedDomains.any { requestedHost.contains(it) } ||
+                                                requestedHost.contains("1shows.org") ||
+                                                requestedHost.contains("skyflixer.fun")
+                                                
+                                        // Allow same-domain or explicitly whitelisted domains to open in main view
+                                        val currentHost = try { java.net.URI(view.url ?: "").host?.removePrefix("www.") ?: "" } catch(e: Exception) { "" }
+                                        val isSameDomain = currentHost.isNotEmpty() && requestedHost.contains(currentHost)
+                                        
+                                        if (!isAd && (isAllowedDomain || isSameDomain)) {
                                             view.loadUrl(requestedUrl)
                                         }
-                                        return true // Cancel loading in the new/dummy WebView
+                                        return true // Cancel loading in the dummy WebView
                                     }
                                 }
                                 val transport = resultMsg.obj as WebView.WebViewTransport
-                                transport.webView = newWebView
+                                transport.webView = dummyWebView
                                 resultMsg.sendToTarget()
                                 return true
                             }
@@ -388,6 +426,11 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                             layoutParams = FrameLayout.LayoutParams(
                                 ViewGroup.LayoutParams.MATCH_PARENT,
                                 ViewGroup.LayoutParams.MATCH_PARENT
+                            )
+                            customView?.layoutParams = FrameLayout.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                android.view.Gravity.CENTER
                             )
                             addView(customView)
                         }

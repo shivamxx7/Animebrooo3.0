@@ -10,7 +10,7 @@ object WebsiteRepository {
         "JAP + HINDI + SUB" to listOf(
             WebsiteModel("Toonstream", "https://toon-stream.site/home"),
             WebsiteModel("Anime world india", "https://watchanimeworld.pro/"),
-            WebsiteModel("Anime salt", "https://animesalt.me/"),
+            WebsiteModel("Anime salt", "https://animesalt.cx/"),
             WebsiteModel("Blakiteanime", "https://www.blakiteanime.buzz/?m=1")
         ),
         "JAP + ENG + SUB" to listOf(
@@ -39,16 +39,31 @@ object WebsiteRepository {
             WebsiteModel("Sony LIV", "https://flixhub.studio/sonyliv/index")
         ),
         "SERVER 2" to listOf(
-            WebsiteModel("Prime Video", "https://pantyflix.com/platforms/9/movie"),
-            WebsiteModel("Netflix", "https://pantyflix.com/platforms/8/movie"),
-            WebsiteModel("Crunchyroll", "https://pantyflix.com/platforms/283/movie"),
-            WebsiteModel("Disney+", "https://pantyflix.com/platforms/337/movie"),
-            WebsiteModel("Apple TV", "https://pantyflix.com/platforms/350/movie"),
-            WebsiteModel("Hulu", "https://pantyflix.com/platforms/15/movie"),
-            WebsiteModel("MGM+", "https://pantyflix.com/platforms/34/movie"),
-            WebsiteModel("HBO MAX", "https://pantyflix.com/platforms/1899/movie"),
-            WebsiteModel("Peacock", "https://pantyflix.com/platforms/387/movie"),
-            WebsiteModel("Shudder", "https://pantyflix.com/platforms/99/movie")
+            WebsiteModel("Prime", "https://pixelflix.cc/studio/prime"),
+            WebsiteModel("Netflix", "https://pixelflix.cc/studio/netflix"),
+            WebsiteModel("Crunchyroll", "https://pixelflix.cc/studio/crunchyroll"),
+            WebsiteModel("Disney+", "https://pixelflix.cc/studio/disney"),
+            WebsiteModel("HBO", "https://pixelflix.cc/studio/hbo"),
+            WebsiteModel("Hulu", "https://pixelflix.cc/studio/hulu")
+        ),
+        "SERVER 3" to listOf(
+            WebsiteModel("Prime Video", "https://cinehd.vc/search?page=1&watch_provider=9"),
+            WebsiteModel("Netflix", "https://cinehd.vc/search?page=1&watch_provider=8"),
+            WebsiteModel("Crunchyroll", "https://cinehd.vc/search?page=1&watch_provider=283"),
+            WebsiteModel("Disney+", "https://cinehd.vc/search?page=1&watch_provider=337"),
+            WebsiteModel("Apple TV", "https://cinehd.vc/search?page=1&watch_provider=350"),
+            WebsiteModel("Hulu", "https://cinehd.vc/search?page=1&watch_provider=15"),
+            WebsiteModel("MGM+", "https://cinehd.vc/search?page=1&watch_provider=583")
+        ),
+        "SERVER 4" to listOf(
+            WebsiteModel("Prime Video", "https://flixeo.tv/platforms/9/movie"),
+            WebsiteModel("Netflix", "https://flixeo.tv/platforms/8/movie"),
+            WebsiteModel("Crunchyroll", "https://flixeo.tv/platforms/283/movie"),
+            WebsiteModel("Disney+", "https://flixeo.tv/platforms/337/movie"),
+            WebsiteModel("Apple TV", "https://flixeo.tv/platforms/350/movie"),
+            WebsiteModel("Hulu", "https://flixeo.tv/platforms/15/movie"),
+            WebsiteModel("MGM+", "https://flixeo.tv/platforms/34/movie"),
+            WebsiteModel("HBO", "https://flixeo.tv/platforms/1899/movie")
         )
     )
 

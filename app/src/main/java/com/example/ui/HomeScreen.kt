@@ -27,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,7 +64,7 @@ import com.example.data.WebsiteRepository
 
 @Composable
 fun HomeScreen(onWebsiteClick: (String) -> Unit) {
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    var selectedTabIndex by androidx.compose.runtime.saveable.rememberSaveable { mutableIntStateOf(0) }
     
     val currentCategories = when (selectedTabIndex) {
         0 -> WebsiteRepository.animeCategories
@@ -85,7 +86,10 @@ fun HomeScreen(onWebsiteClick: (String) -> Unit) {
                     .weight(1f),
                 contentPadding = PaddingValues(bottom = 120.dp, top = 8.dp)
             ) {
-                items(currentCategories.entries.toList()) { (categoryName, websites) ->
+                items(
+                    items = currentCategories.entries.toList(),
+                    key = { it.key }
+                ) { (categoryName, websites) ->
                     CategoryRow(categoryName, websites, onWebsiteClick)
                     Spacer(modifier = Modifier.height(24.dp))
                 }
@@ -93,7 +97,13 @@ fun HomeScreen(onWebsiteClick: (String) -> Unit) {
         }
         BottomNavigationBar(
             selectedIndex = selectedTabIndex,
-            onIndexSelected = { selectedTabIndex = it },
+            onIndexSelected = { 
+                if (it == 3) {
+                    onWebsiteClick("https://skyflixer.fun/browse")
+                } else {
+                    selectedTabIndex = it 
+                }
+            },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 24.dp)
@@ -210,6 +220,13 @@ fun CategoryRow(categoryName: String, websites: List<WebsiteModel>, onWebsiteCli
         }
         
         val listState = rememberLazyListState()
+        
+        LaunchedEffect(websites) {
+            if (websites.size > 1 && listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0) {
+                listState.scrollToItem(1)
+            }
+        }
+        
         val configuration = LocalConfiguration.current
         val screenWidth = configuration.screenWidthDp.dp
         val cardWidth = 150.dp
@@ -290,8 +307,8 @@ fun WebsiteCard(
         ) {
             val isAniwave = website.name.equals("Aniwave", ignoreCase = true)
             if (isAniwave) {
-                Image(
-                    painter = painterResource(id = R.drawable.logo_aniwave),
+                AsyncImage(
+                    model = R.drawable.logo_aniwave,
                     contentDescription = website.name,
                     modifier = Modifier.size(76.dp).clip(RoundedCornerShape(16.dp)),
                     contentScale = ContentScale.Crop
@@ -326,7 +343,7 @@ fun BottomNavigationBar(
         "ANIME" to Color(0xFF4FC3F7),
         "OTT" to Color(0xFFB388FF),
         "PREMIUM" to Color(0xFFFFD54F),
-        "WATCHLIST" to Color(0xFFFF5252),
+        "TV SHOWS" to Color(0xFFFF5252),
         "PROFILE" to Color(0xFF448AFF)
     )
 
@@ -421,8 +438,8 @@ fun IconGraphic(index: Int, baseColor: Color) {
                     .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.img_rem),
+                AsyncImage(
+                    model = R.drawable.img_rem,
                     contentDescription = "Rem",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -470,15 +487,31 @@ fun IconGraphic(index: Int, baseColor: Color) {
                 drawRoundRect(brush, topLeft = androidx.compose.ui.geometry.Offset(2.dp.toPx(), 17.dp.toPx()), size = androidx.compose.ui.geometry.Size(20.dp.toPx(), 3.dp.toPx()), cornerRadius = androidx.compose.ui.geometry.CornerRadius(1.5.dp.toPx()))
             }
         }
-        3 -> { // WATCHLIST (Bookmark)
+        3 -> { // TV SHOWS (Film Strip)
             androidx.compose.foundation.Canvas(modifier = Modifier.size(size)) {
                 val brush = Brush.verticalGradient(listOf(Color(0xFFFF5252), Color(0xFFC51162)))
+                val corner = 2.dp.toPx()
+                // Film strip border
+                drawRoundRect(
+                    brush = brush,
+                    topLeft = androidx.compose.ui.geometry.Offset(2.dp.toPx(), 2.dp.toPx()),
+                    size = androidx.compose.ui.geometry.Size(20.dp.toPx(), 20.dp.toPx()),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner, corner),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
+                )
+                // Top holes
+                drawCircle(brush, radius = 1.dp.toPx(), center = androidx.compose.ui.geometry.Offset(6.dp.toPx(), 5.dp.toPx()))
+                drawCircle(brush, radius = 1.dp.toPx(), center = androidx.compose.ui.geometry.Offset(12.dp.toPx(), 5.dp.toPx()))
+                drawCircle(brush, radius = 1.dp.toPx(), center = androidx.compose.ui.geometry.Offset(18.dp.toPx(), 5.dp.toPx()))
+                // Bottom holes
+                drawCircle(brush, radius = 1.dp.toPx(), center = androidx.compose.ui.geometry.Offset(6.dp.toPx(), 19.dp.toPx()))
+                drawCircle(brush, radius = 1.dp.toPx(), center = androidx.compose.ui.geometry.Offset(12.dp.toPx(), 19.dp.toPx()))
+                drawCircle(brush, radius = 1.dp.toPx(), center = androidx.compose.ui.geometry.Offset(18.dp.toPx(), 19.dp.toPx()))
+                // Play button in center
                 val path = Path().apply {
-                    moveTo(5.dp.toPx(), 2.dp.toPx())
-                    lineTo(19.dp.toPx(), 2.dp.toPx())
-                    lineTo(19.dp.toPx(), 22.dp.toPx())
-                    lineTo(12.dp.toPx(), 16.dp.toPx())
-                    lineTo(5.dp.toPx(), 22.dp.toPx())
+                    moveTo(9.dp.toPx(), 8.dp.toPx())
+                    lineTo(16.dp.toPx(), 12.dp.toPx())
+                    lineTo(9.dp.toPx(), 16.dp.toPx())
                     close()
                 }
                 drawPath(path, brush, style = androidx.compose.ui.graphics.drawscope.Fill)

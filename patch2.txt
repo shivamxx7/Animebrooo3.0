@@ -1,0 +1,45 @@
+--- app/src/main/java/com/example/ui/WebViewScreen.kt
++++ app/src/main/java/com/example/ui/WebViewScreen.kt
+@@ -539,6 +539,10 @@
+                                 onBack()
+                             }
+                         },
++                        onHome = {
++                            showControlPanel = false
++                            onBack()
++                        },
+                         context = context,
+                         activity = activity
+                     )
+@@ -559,6 +563,7 @@
+     onLock: () -> Unit,
+     onRotate: () -> Unit,
+     onBack: () -> Unit,
++    onHome: () -> Unit,
+     context: Context,
+     activity: Activity?
+ ) {
+@@ -578,6 +583,7 @@
+                 ControlActionRow(icon = Icons.Default.Lock, text = "Lock", onClick = onLock)
+                 ControlActionRow(icon = Icons.Default.ScreenRotation, text = "Rotate", onClick = onRotate)
+                 ControlActionRow(icon = Icons.Default.ArrowBack, text = "Back", onClick = onBack)
++                ControlActionRow(icon = Icons.Default.Home, text = "Home", onClick = onHome)
+             }
+ 
+             Row(
+@@ -620,7 +626,14 @@
+         horizontalArrangement = Arrangement.spacedBy(16.dp),
+         modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
+     ) {
+-        Icon(imageVector = icon, contentDescription = text, tint = Color.White, modifier = Modifier.size(24.dp))
++        androidx.compose.foundation.layout.Box(
++            modifier = Modifier
++                .size(48.dp)
++                .background(if (onClick != null) Color(0xFF2A2A2A) else Color.Transparent, CircleShape),
++            contentAlignment = Alignment.Center
++        ) {
++            Icon(imageVector = icon, contentDescription = text, tint = Color.White, modifier = Modifier.size(24.dp))
++        }
+         Text(text = text, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+     }
+ }

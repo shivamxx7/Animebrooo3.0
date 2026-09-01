@@ -1,0 +1,10 @@
+--- app/src/main/java/com/example/ui/HomeScreen.kt
++++ app/src/main/java/com/example/ui/HomeScreen.kt
+@@ -305,7 +305,6 @@
+         LazyRow(
+             state = listState,
+             contentPadding = PaddingValues(horizontal = horizontalPadding),
+             horizontalArrangement = Arrangement.spacedBy(16.dp),
+-            flingBehavior = rememberSnapFlingBehavior(lazyListState = listState),
+             modifier = Modifier.fillMaxWidth()
+         ) {

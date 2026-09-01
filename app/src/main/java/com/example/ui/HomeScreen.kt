@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.ui.draw.shadow
@@ -157,6 +156,7 @@ fun HomeScreen(onWebsiteClick: (String) -> Unit) {
 
 @Composable
 fun HeaderSection(onWebsiteClick: (String) -> Unit, onMenuClick: () -> Unit) {
+    val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -208,7 +208,10 @@ fun HeaderSection(onWebsiteClick: (String) -> Unit, onMenuClick: () -> Unit) {
             modifier = Modifier
                 .size(44.dp)
                 .clip(CircleShape)
-                .clickable { onWebsiteClick("https://t.me/animebroig") }
+                .clickable { 
+                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://t.me/animebroig"))
+                    context.startActivity(intent)
+                }
                 .background(Color(0xFF161618))
                 .border(1.dp, Color(0xFF27272A), CircleShape),
             contentAlignment = Alignment.Center
@@ -285,59 +288,41 @@ fun CategoryRow(
             }
         }
         
-        val listState = rememberLazyListState()
-        
-        LaunchedEffect(websites) {
-            if (websites.size > 1 && listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0) {
-                listState.scrollToItem(1)
-            }
-        }
+        val pagerState = androidx.compose.foundation.pager.rememberPagerState(
+            initialPage = if (websites.size > 1) 1 else 0,
+            pageCount = { websites.size }
+        )
         
         val configuration = LocalConfiguration.current
         val screenWidth = configuration.screenWidthDp.dp
         val cardWidth = 150.dp
         val horizontalPadding = (screenWidth - cardWidth) / 2
 
-        LazyRow(
-            state = listState,
+        androidx.compose.foundation.pager.HorizontalPager(
+            state = pagerState,
             contentPadding = PaddingValues(horizontal = horizontalPadding),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            flingBehavior = rememberSnapFlingBehavior(lazyListState = listState),
+            pageSpacing = 16.dp,
             modifier = Modifier.fillMaxWidth()
-        ) {
-            items(websites.size) { index ->
-                val website = websites[index]
-                
-                WebsiteCard(
-                    website = website,
-                    accentColor = accentColor,
-                    isCenter = true,
-                    modifier = Modifier.graphicsLayer {
-                        val layoutInfo = listState.layoutInfo
-                        val visibleItem = layoutInfo.visibleItemsInfo.find { it.index == index }
-                        if (visibleItem != null) {
-                            val viewportCenter = layoutInfo.viewportStartOffset + layoutInfo.viewportSize.width / 2f
-                            val itemCenter = visibleItem.offset + visibleItem.size / 2f
-                            val distance = kotlin.math.abs(viewportCenter - itemCenter)
-                            
-                            val maxDistance = visibleItem.size.toFloat()
-                            val fraction = (distance / maxDistance).coerceIn(0f, 1f)
-                            
-                            val scale = (1 - fraction) * 1f + fraction * 0.82f
-                            val itemAlpha = (1 - fraction) * 1f + fraction * 0.5f
-                            
-                            scaleX = scale
-                            scaleY = scale
-                            this.alpha = itemAlpha
-                        } else {
-                            scaleX = 0.82f
-                            scaleY = 0.82f
-                            this.alpha = 0.5f
-                        }
-                    },
-                    onClick = { onWebsiteClick(website.url) }
-                )
-            }
+        ) { page ->
+            val website = websites[page]
+            
+            WebsiteCard(
+                website = website,
+                accentColor = accentColor,
+                isCenter = true,
+                modifier = Modifier.graphicsLayer {
+                    val pageOffset = kotlin.math.abs((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction)
+                    val fraction = pageOffset.coerceIn(0f, 1f)
+                    
+                    val scale = (1 - fraction) * 1f + fraction * 0.82f
+                    val itemAlpha = (1 - fraction) * 1f + fraction * 0.5f
+                    
+                    scaleX = scale
+                    scaleY = scale
+                    this.alpha = itemAlpha
+                },
+                onClick = { onWebsiteClick(website.url) }
+            )
         }
     }
 }
@@ -594,111 +579,62 @@ fun ViewAllModal(
     onClose: () -> Unit,
     onWebsiteClick: (String) -> Unit
 ) {
-    if (!isOpen && originBounds == null) return
-
-    val transition = androidx.compose.animation.core.updateTransition(targetState = isOpen, label = "ModalTransition")
+    if (!isOpen) return
     
-    if (!isOpen && transition.currentState == isOpen) return
-
-    val config = LocalConfiguration.current
-    val density = LocalDensity.current
-    
-    val screenWidthPx = with(density) { config.screenWidthDp.dp.toPx() }
-    val screenHeightPx = with(density) { config.screenHeightDp.dp.toPx() }
-    
-    val targetWidthPx = with(density) { (config.screenWidthDp.dp - 48.dp).toPx() }
-    val targetHeightPx = with(density) { (config.screenHeightDp.dp - 120.dp).toPx() }
-    
-    val targetXPx = (screenWidthPx - targetWidthPx) / 2f
-    val targetYPx = (screenHeightPx - targetHeightPx) / 2f
-    
-    val originXPx = originBounds?.left ?: targetXPx
-    val originYPx = originBounds?.top ?: targetYPx
-    val originWidthPx = originBounds?.width ?: 0f
-    val originHeightPx = originBounds?.height ?: 0f
-
-    val springSpec = androidx.compose.animation.core.spring<Float>(
-        dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
-        stiffness = androidx.compose.animation.core.Spring.StiffnessLow
-    )
-
-    val fraction by transition.animateFloat(
-        transitionSpec = { springSpec },
-        label = "fraction"
-    ) { state ->
-        if (state) 1f else 0f
-    }
-    
-    val currentWidth = androidx.compose.ui.util.lerp(originWidthPx, targetWidthPx, fraction)
-    val currentHeight = androidx.compose.ui.util.lerp(originHeightPx, targetHeightPx, fraction)
-    val currentX = androidx.compose.ui.util.lerp(originXPx, targetXPx, fraction)
-    val currentY = androidx.compose.ui.util.lerp(originYPx, targetYPx, fraction)
-    val cornerRadius = androidx.compose.ui.util.lerp(12f, 32f, fraction)
-    
-    val bgAlpha = fraction * 0.7f
-    
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClose
-            )
-            .background(Color.Black.copy(alpha = bgAlpha))
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onClose,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Box(
             modifier = Modifier
-                .offset { androidx.compose.ui.unit.IntOffset(currentX.toInt(), currentY.toInt()) }
-                .size(
-                    width = with(density) { currentWidth.toDp() },
-                    height = with(density) { currentHeight.toDp() }
-                )
-                .clip(RoundedCornerShape(cornerRadius.dp))
+                .fillMaxWidth(0.9f)
+                .fillMaxHeight(0.85f)
+                .clip(RoundedCornerShape(24.dp))
                 .background(Color(0xFF161618))
-                .border(1.dp, Color(0xFF27272A).copy(alpha = fraction), RoundedCornerShape(cornerRadius.dp))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {}
-                )
+                .border(1.dp, Color(0xFF27272A), RoundedCornerShape(24.dp))
         ) {
-            if (fraction > 0.1f) {
-                Column(
-                    modifier = Modifier.fillMaxSize().graphicsLayer { alpha = (fraction - 0.1f) / 0.9f }
+            Column(modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(24.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Text(
+                        text = categoryName ?: "",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    androidx.compose.material3.IconButton(
+                        onClick = onClose,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(Color(0xFF27272A), CircleShape)
                     ) {
-                        Text(
-                            text = categoryName ?: "",
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
+                        Icon(
+                            Icons.Default.Clear,
+                            contentDescription = "Close",
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
                         )
-                        androidx.compose.material3.IconButton(onClick = onClose, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.Default.Clear, contentDescription = "Close", tint = Color.White)
-                        }
                     }
-                    
-                    LazyVerticalGrid(
-                        columns = GridCells.Adaptive(130.dp),
-                        contentPadding = PaddingValues(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(websites ?: emptyList()) { website ->
-                             WebsiteCard(
-                                website = website,
-                                accentColor = Color(0xFF00E5FF),
-                                isCenter = false,
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = { onWebsiteClick(website.url) }
-                            )
-                        }
+                }
+                
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(130.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(websites ?: emptyList()) { website -> 
+                         WebsiteCard(
+                            website = website,
+                            accentColor = Color(0xFF00E5FF),
+                            isCenter = false,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { onWebsiteClick(website.url) }
+                        )
                     }
                 }
             }
@@ -856,10 +792,12 @@ fun SidebarOverlay(isOpen: Boolean, onClose: () -> Unit, onWebsiteClick: (String
     }
     
     if (showSocialModal) {
+        val context = LocalContext.current
         SocialModal(
             onClose = { showSocialModal = false },
             onLinkClick = { link ->
-                onWebsiteClick(link)
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(link))
+                context.startActivity(intent)
                 showSocialModal = false
             }
         )

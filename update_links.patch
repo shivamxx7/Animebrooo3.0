@@ -1,0 +1,38 @@
+--- app/src/main/java/com/example/ui/HomeScreen.kt
++++ app/src/main/java/com/example/ui/HomeScreen.kt
+@@ -157,6 +157,7 @@
+ 
+ @Composable
+ fun HeaderSection(onWebsiteClick: (String) -> Unit, onMenuClick: () -> Unit) {
++    val context = LocalContext.current
+     Row(
+         modifier = Modifier
+             .fillMaxWidth()
+@@ -207,7 +208,10 @@
+         Box(
+             modifier = Modifier
+                 .size(44.dp)
+                 .clip(CircleShape)
+-                .clickable { onWebsiteClick("https://t.me/animebroig") }
++                .clickable { 
++                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://t.me/animebroig"))
++                    context.startActivity(intent)
++                }
+                 .background(Color(0xFF161618))
+                 .border(1.dp, Color(0xFF27272A), CircleShape),
+             contentAlignment = Alignment.Center
+@@ -849,15 +853,17 @@
+     }
+     
+     if (showSocialModal) {
++        val context = LocalContext.current
+         SocialModal(
+             onClose = { showSocialModal = false },
+             onLinkClick = { link ->
+-                onWebsiteClick(link)
++                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(link))
++                context.startActivity(intent)
+                 showSocialModal = false
+             }
+         )
+     }

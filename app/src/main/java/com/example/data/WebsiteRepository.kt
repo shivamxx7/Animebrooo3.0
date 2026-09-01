@@ -9,15 +9,15 @@ object WebsiteRepository {
     val animeCategories = mapOf(
         "JAP + HINDI + SUB" to listOf(
             WebsiteModel("Toonstream", "https://toon-stream.site/home"),
-            WebsiteModel("Anime world india", "https://watchanimeworld.pro/"),
             WebsiteModel("Anime salt", "https://animesalt.cx/"),
-            WebsiteModel("Blakiteanime", "https://www.blakiteanime.buzz/?m=1")
+            WebsiteModel("Blakiteanime", "https://www.blakiteanime.buzz/?m=1"),
+            WebsiteModel("Anime world india", "https://watchanimeworld.pro/")
         ),
         "JAP + ENG + SUB" to listOf(
-            WebsiteModel("Yeanime", "https://yenime.net/"),
             WebsiteModel("Hianime", "https://hianime.ro/home"),
-            WebsiteModel("Animeflix", "https://animeflix.app/"),
-            WebsiteModel("Anistream", "https://anistream.one/home")
+            WebsiteModel("Yeanime", "https://yenime.net/"),
+            WebsiteModel("Anistream", "https://anistream.one/home"),
+            WebsiteModel("Animeflix", "https://animeflix.app/")
         ),
         "JAP + SUB" to listOf(
             WebsiteModel("Animepahe", "https://animepahe.pw/"),

@@ -1,0 +1,92 @@
+--- app/src/main/java/com/example/ui/HomeScreen.kt
++++ app/src/main/java/com/example/ui/HomeScreen.kt
+@@ -10,6 +10,12 @@
+ import androidx.compose.foundation.lazy.rememberLazyListState
+ import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+ import androidx.compose.foundation.pager.HorizontalPager
++import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
++import androidx.compose.foundation.lazy.grid.GridCells
++import androidx.compose.foundation.lazy.grid.items
++import androidx.compose.material.icons.filled.Clear
++import androidx.compose.ui.platform.LocalDensity
++import androidx.compose.ui.layout.onGloballyPositioned
++import androidx.compose.ui.layout.boundsInRoot
+ import androidx.compose.foundation.pager.rememberPagerState
+ import androidx.compose.foundation.shape.CircleShape
+ import androidx.compose.foundation.shape.RoundedCornerShape
+@@ -62,12 +68,17 @@
+ import androidx.compose.runtime.mutableIntStateOf
+ import com.example.data.WebsiteRepository
+ 
+ @Composable
+ fun HomeScreen(onWebsiteClick: (String) -> Unit) {
+     var selectedTabIndex by androidx.compose.runtime.saveable.rememberSaveable { mutableIntStateOf(0) }
+     
++    var expandedCategory by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
++    var expandedWebsites by remember { androidx.compose.runtime.mutableStateOf<List<WebsiteModel>?>(null) }
++    var originBounds by remember { androidx.compose.runtime.mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
++
+     val currentCategories = when (selectedTabIndex) {
+         0 -> WebsiteRepository.animeCategories
+         1 -> WebsiteRepository.ottCategories
+         else -> emptyMap()
+     }
+ 
+@@ -87,7 +98,11 @@
+                 items(
+                     items = currentCategories.entries.toList(),
+                     key = { it.key }
+                 ) { (categoryName, websites) ->
+-                    CategoryRow(categoryName, websites, onWebsiteClick)
++                    CategoryRow(categoryName, websites, onWebsiteClick, onViewAllClick = { bounds ->
++                        expandedCategory = categoryName
++                        expandedWebsites = websites
++                        originBounds = bounds
++                    })
+                     Spacer(modifier = Modifier.height(24.dp))
+                 }
+@@ -106,6 +121,17 @@
+                 .align(Alignment.BottomCenter)
+                 .padding(bottom = 24.dp)
+         )
++
++        ViewAllModal(
++            isOpen = expandedCategory != null,
++            categoryName = expandedCategory,
++            websites = expandedWebsites,
++            originBounds = originBounds,
++            onClose = {
++                expandedCategory = null
++            },
++            onWebsiteClick = onWebsiteClick
++        )
+     }
+ }
+ 
+@@ -169,7 +195,7 @@
+ }
+ 
+ @Composable
+-fun CategoryRow(categoryName: String, websites: List<WebsiteModel>, onWebsiteClick: (String) -> Unit) {
++fun CategoryRow(categoryName: String, websites: List<WebsiteModel>, onWebsiteClick: (String) -> Unit, onViewAllClick: (androidx.compose.ui.geometry.Rect) -> Unit) {
+     val accentColor = when {
+         categoryName.contains("HINDI") -> Color(0xFF00E5FF)
+         categoryName.contains("ENG") -> Color(0xFFD500F9)
+@@ -199,10 +225,18 @@
+                 )
+             }
+             
++            var bounds by remember { androidx.compose.runtime.mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
++
+             Row(
+                 modifier = Modifier
++                    .onGloballyPositioned { layoutCoordinates ->
++                        bounds = layoutCoordinates.boundsInRoot()
++                    }
++                    .clip(RoundedCornerShape(12.dp))
++                    .clickable {
++                        onViewAllClick(bounds)
++                    }
+                     .background(Color(0xFF161618), RoundedCornerShape(12.dp))
+                     .border(1.dp, Color(0xFF27272A), RoundedCornerShape(12.dp))
+                     .padding(start = 12.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),

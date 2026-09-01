@@ -121,10 +121,19 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
         }
     }
 
-    val adDomains = listOf(
-        "doubleclick.net", "googleadservices.com", "adsafeprotected.com", "popads.net",
-        "adsterra.com", "onclickads.net", "exoclick.com", "hilltopads.net", "propellerads.com"
-    )
+    var showCountdown by remember { mutableStateOf(false) }
+    var countdownValue by remember { mutableIntStateOf(6) }
+
+    LaunchedEffect(showCountdown) {
+        if (showCountdown) {
+            countdownValue = 6
+            while (countdownValue > 0) {
+                delay(1000)
+                countdownValue--
+            }
+            showCountdown = false
+        }
+    }
 
     val isAnimeSite = remember(url) {
         WebsiteRepository.animeCategories.values.flatten().any { website ->
@@ -132,6 +141,20 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
             domain.isNotEmpty() && url.contains(domain)
         }
     }
+
+    val isTvShowSite = remember(url) { url.contains("1shows.org") }
+
+    LaunchedEffect(isLoading) {
+        // Trigger countdown only when loading finishes for TV Shows
+        if (!isLoading && isTvShowSite) {
+            showCountdown = true
+        }
+    }
+
+    val adDomains = listOf(
+        "doubleclick.net", "googleadservices.com", "adsafeprotected.com", "popads.net",
+        "adsterra.com", "onclickads.net", "exoclick.com", "hilltopads.net", "propellerads.com"
+    )
 
     BackHandler {
         if (customView != null) {
@@ -363,6 +386,28 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                 CircularProgressIndicator(color = Color(0xFFFF6D00))
             }
         }
+        
+        AnimatedVisibility(
+            visible = showCountdown && isTvShowSite,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.Center)
+        ) {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Please wait — $countdownValue seconds remaining",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
         if (customView != null) {
             androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
                 AndroidView(
@@ -383,28 +428,6 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                     },
                     modifier = Modifier.fillMaxSize()
                 )
-                
-                IconButton(
-                    onClick = {
-                        activity?.let {
-                            it.requestedOrientation = if (it.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE || it.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE) {
-                                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                            } else {
-                                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                            }
-                        }
-                    },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(24.dp)
-                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Rotate Screen",
-                        tint = Color.White
-                    )
-                }
             }
         }
 
@@ -432,7 +455,7 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                 exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut(),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = 24.dp, bottom = 48.dp)
+                    .padding(end = 24.dp, bottom = 128.dp)
             ) {
                 IconButton(
                     onClick = {
@@ -476,6 +499,12 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
                     contentAlignment = Alignment.Center
                 ) {
                     ControlPanelContent(
+                        onRefresh = {
+                            webView?.reload()
+                            showControlPanel = false
+                            showSettingsFab = true
+                            fabTimer++
+                        },
                         onLock = {
                             isLocked = true
                             showControlPanel = false
@@ -543,6 +572,7 @@ fun WebViewScreen(url: String, onBack: () -> Unit) {
 
 @Composable
 fun ControlPanelContent(
+    onRefresh: () -> Unit,
     onLock: () -> Unit,
     onRotate: () -> Unit,
     onBack: () -> Unit,
@@ -551,19 +581,18 @@ fun ControlPanelContent(
     activity: Activity?
 ) {
     Card(
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF161616).copy(alpha = 0.95f)),
         modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
     ) {
         Row(
-            modifier = Modifier.padding(24.dp),
-            horizontalArrangement = Arrangement.spacedBy(32.dp)
+            modifier = Modifier.padding(20.dp),
+            horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(20.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                ControlActionRow(icon = Icons.Default.WbSunny, text = "Brightness", onClick = null)
-                ControlActionRow(icon = Icons.Default.VolumeUp, text = "Volume", onClick = null)
+                ControlActionRow(icon = Icons.Default.Refresh, text = "Refresh", onClick = onRefresh)
                 ControlActionRow(icon = Icons.Default.Lock, text = "Lock", onClick = onLock)
                 ControlActionRow(icon = Icons.Default.ScreenRotation, text = "Rotate", onClick = onRotate)
                 ControlActionRow(icon = Icons.Default.ArrowBack, text = "Back", onClick = onBack)
@@ -607,18 +636,18 @@ fun ControlPanelContent(
 fun ControlActionRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, onClick: (() -> Unit)?) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
     ) {
         androidx.compose.foundation.layout.Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(40.dp)
                 .background(if (onClick != null) Color(0xFF2A2A2A) else Color.Transparent, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(imageVector = icon, contentDescription = text, tint = Color.White, modifier = Modifier.size(24.dp))
+            Icon(imageVector = icon, contentDescription = text, tint = Color.White, modifier = Modifier.size(20.dp))
         }
-        Text(text = text, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        Text(text = text, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -632,9 +661,9 @@ fun CustomVerticalSlider(
     var sliderHeight by remember { mutableIntStateOf(0) }
     androidx.compose.foundation.layout.Box(
         modifier = Modifier
-            .width(48.dp)
-            .height(220.dp)
-            .clip(RoundedCornerShape(24.dp))
+            .width(42.dp)
+            .height(200.dp)
+            .clip(RoundedCornerShape(21.dp))
             .background(Color(0xFF2A2A2A))
             .onSizeChanged { sliderHeight = it.height }
             .pointerInput(Unit) {
@@ -669,8 +698,8 @@ fun CustomVerticalSlider(
             tint = Color.White,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp)
-                .size(24.dp)
+                .padding(bottom = 12.dp)
+                .size(20.dp)
         )
     }
 }

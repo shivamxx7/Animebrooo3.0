@@ -1,0 +1,58 @@
+--- app/src/main/java/com/example/ui/HomeScreen.kt
++++ app/src/main/java/com/example/ui/HomeScreen.kt
+@@ -34,6 +34,8 @@
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.runtime.DisposableEffect
++import androidx.compose.animation.AnimatedVisibility
++import androidx.compose.animation.core.tween
++import androidx.compose.animation.slideInHorizontally
++import androidx.compose.animation.slideOutHorizontally
++import androidx.compose.animation.fadeIn
++import androidx.compose.animation.fadeOut
+ import androidx.compose.runtime.LaunchedEffect
+ import androidx.compose.runtime.remember
+ import androidx.compose.ui.Alignment
+@@ -69,6 +71,7 @@
+     var expandedCategory by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+     var expandedWebsites by remember { androidx.compose.runtime.mutableStateOf<List<WebsiteModel>?>(null) }
+     var originBounds by remember { androidx.compose.runtime.mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
++    var isSidebarOpen by remember { androidx.compose.runtime.mutableStateOf(false) }
+ 
+     val currentCategories = when (selectedTabIndex) {
+         0 -> WebsiteRepository.animeCategories
+@@ -90,7 +93,7 @@
+             .background(Color(0xFF09090B))
+     ) {
+         Column(modifier = Modifier.fillMaxSize()) {
+-            HeaderSection(onWebsiteClick = onWebsiteClick)
++            HeaderSection(onWebsiteClick = onWebsiteClick, onMenuClick = { isSidebarOpen = true })
+             
+             LazyColumn(
+                 modifier = Modifier
+@@ -116,6 +119,10 @@
+             },
+             onWebsiteClick = onWebsiteClick
+         )
++        
++        SidebarOverlay(isOpen = isSidebarOpen, onClose = { isSidebarOpen = false }, onWebsiteClick = onWebsiteClick)
+     }
+ }
+ 
+@@ -144,7 +151,7 @@
+ }
+ 
+ @Composable
+-fun HeaderSection(onWebsiteClick: (String) -> Unit) {
++fun HeaderSection(onWebsiteClick: (String) -> Unit, onMenuClick: () -> Unit) {
+     Row(
+         modifier = Modifier
+             .fillMaxWidth()
+@@ -155,6 +162,7 @@
+         Box(
+             modifier = Modifier
+                 .size(44.dp)
++                .clickable { onMenuClick() }
+                 .background(Color(0xFF161618), RoundedCornerShape(14.dp))
+                 .border(1.dp, Color(0xFF27272A), RoundedCornerShape(14.dp)),
+             contentAlignment = Alignment.Center

@@ -1,5 +1,9 @@
 package com.example.ui
 
+
+import android.graphics.Bitmap
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.Alignment
 import android.content.Intent
 import android.net.Uri
 import android.webkit.WebResourceRequest
@@ -22,6 +26,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 @Composable
 fun SocialWebViewScreen(url: String, onBack: () -> Unit) {
     var webView: WebView? by remember { mutableStateOf(null) }
+    var isLoading by remember { mutableStateOf(true) }
     val context = LocalContext.current
 
     BackHandler {
@@ -44,6 +49,16 @@ fun SocialWebViewScreen(url: String, onBack: () -> Unit) {
                     settings.userAgentString = settings.userAgentString.replace("; wv", "")
 
                     webViewClient = object : WebViewClient() {
+                        override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                            super.onPageStarted(view, url, favicon)
+                            isLoading = true
+                        }
+
+                        override fun onPageFinished(view: WebView?, url: String?) {
+                            super.onPageFinished(view, url)
+                            isLoading = false
+                        }
+
                         override fun shouldOverrideUrlLoading(
                             view: WebView?,
                             request: WebResourceRequest?
@@ -57,21 +72,22 @@ fun SocialWebViewScreen(url: String, onBack: () -> Unit) {
                             
                             // Otherwise, it's a custom scheme like tg:// or intent://
                             try {
-                                val intent = Intent.parseUri(requestUrl, Intent.URI_INTENT_SCHEME)
-                                if (intent.resolveActivity(context.packageManager) != null) {
-                                    context.startActivity(intent)
+                                if (requestUrl.startsWith("intent://")) {
+                                    val intent = Intent.parseUri(requestUrl, Intent.URI_INTENT_SCHEME)
+                                    try {
+                                        context.startActivity(intent)
+                                    } catch (e: android.content.ActivityNotFoundException) {
+                                        val fallbackUrl = intent.getStringExtra("browser_fallback_url")
+                                        if (fallbackUrl != null) {
+                                            view?.loadUrl(fallbackUrl)
+                                        }
+                                    }
                                 } else {
-                                    // If app not installed, try to open market or fallback URL
-                                    val fallbackUrl = intent.getStringExtra("browser_fallback_url")
-                                    if (fallbackUrl != null) {
-                                        view?.loadUrl(fallbackUrl)
-                                    } else {
-                                        val marketIntent = Intent(Intent.ACTION_VIEW).apply {
-                                            data = Uri.parse("market://details?id=" + intent.`package`)
-                                        }
-                                        if (marketIntent.resolveActivity(context.packageManager) != null) {
-                                            context.startActivity(marketIntent)
-                                        }
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(requestUrl))
+                                    try {
+                                        context.startActivity(intent)
+                                    } catch (e: android.content.ActivityNotFoundException) {
+                                        // App not found
                                     }
                                 }
                                 return true
@@ -88,5 +104,12 @@ fun SocialWebViewScreen(url: String, onBack: () -> Unit) {
                 }
             }
         )
+        
+        if (isLoading) {
+            CircularProgressIndicator(
+                color = Color(0xFFFF6D00),
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
     }
 }

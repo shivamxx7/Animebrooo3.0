@@ -99,7 +99,7 @@ fun HomeScreen(onWebsiteClick: (String) -> Unit, onSocialLinkClick: (String) -> 
             .background(Color(0xFF09090B))
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            HeaderSection(onWebsiteClick = onWebsiteClick, onMenuClick = { isSidebarOpen = true })
+            HeaderSection(onWebsiteClick = onWebsiteClick, onMenuClick = { isSidebarOpen = true }, onSocialLinkClick = onSocialLinkClick)
             
             LazyColumn(
                 modifier = Modifier
@@ -160,7 +160,7 @@ fun HomeScreen(onWebsiteClick: (String) -> Unit, onSocialLinkClick: (String) -> 
 }
 
 @Composable
-fun HeaderSection(onWebsiteClick: (String) -> Unit, onMenuClick: () -> Unit) {
+fun HeaderSection(onWebsiteClick: (String) -> Unit, onMenuClick: () -> Unit, onSocialLinkClick: (String) -> Unit = {}) {
     val context = LocalContext.current
     Row(
         modifier = Modifier
@@ -213,10 +213,7 @@ fun HeaderSection(onWebsiteClick: (String) -> Unit, onMenuClick: () -> Unit) {
             modifier = Modifier
                 .size(44.dp)
                 .clip(CircleShape)
-                .clickable { 
-                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://t.me/animebroig"))
-                    context.startActivity(intent)
-                }
+                .clickable { onSocialLinkClick("https://t.me/animebroig") }
                 .background(Color(0xFF161618))
                 .border(1.dp, Color(0xFF27272A), CircleShape),
             contentAlignment = Alignment.Center

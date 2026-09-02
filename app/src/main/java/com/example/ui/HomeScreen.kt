@@ -79,7 +79,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import com.example.data.WebsiteRepository
 
 @Composable
-fun HomeScreen(onWebsiteClick: (String) -> Unit) {
+fun HomeScreen(onWebsiteClick: (String) -> Unit, onSocialLinkClick: (String) -> Unit = {}) {
     var selectedTabIndex by androidx.compose.runtime.saveable.rememberSaveable { mutableIntStateOf(0) }
     
     var expandedCategory by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
@@ -150,7 +150,12 @@ fun HomeScreen(onWebsiteClick: (String) -> Unit) {
             onWebsiteClick = onWebsiteClick
         )
         
-        SidebarOverlay(isOpen = isSidebarOpen, onClose = { isSidebarOpen = false }, onWebsiteClick = onWebsiteClick)
+        SidebarOverlay(
+            isOpen = isSidebarOpen,
+            onClose = { isSidebarOpen = false },
+            onWebsiteClick = onWebsiteClick,
+            onSocialLinkClick = onSocialLinkClick
+        )
     }
 }
 
@@ -288,41 +293,53 @@ fun CategoryRow(
             }
         }
         
-        val pagerState = androidx.compose.foundation.pager.rememberPagerState(
-            initialPage = if (websites.size > 1) 1 else 0,
-            pageCount = { websites.size }
-        )
+        val listState = rememberLazyListState(initialFirstVisibleItemIndex = if (websites.size > 1) 1 else 0)
         
         val configuration = LocalConfiguration.current
         val screenWidth = configuration.screenWidthDp.dp
         val cardWidth = 150.dp
         val horizontalPadding = (screenWidth - cardWidth) / 2
 
-        androidx.compose.foundation.pager.HorizontalPager(
-            state = pagerState,
+        LazyRow(
+            state = listState,
             contentPadding = PaddingValues(horizontal = horizontalPadding),
-            pageSpacing = 16.dp,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            flingBehavior = androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior(lazyListState = listState),
             modifier = Modifier.fillMaxWidth()
-        ) { page ->
-            val website = websites[page]
-            
-            WebsiteCard(
-                website = website,
-                accentColor = accentColor,
-                isCenter = true,
-                modifier = Modifier.graphicsLayer {
-                    val pageOffset = kotlin.math.abs((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction)
-                    val fraction = pageOffset.coerceIn(0f, 1f)
-                    
-                    val scale = (1 - fraction) * 1f + fraction * 0.82f
-                    val itemAlpha = (1 - fraction) * 1f + fraction * 0.5f
-                    
-                    scaleX = scale
-                    scaleY = scale
-                    this.alpha = itemAlpha
-                },
-                onClick = { onWebsiteClick(website.url) }
-            )
+        ) {
+            items(websites.size) { index ->
+                val website = websites[index]
+                
+                WebsiteCard(
+                    website = website,
+                    accentColor = accentColor,
+                    isCenter = true,
+                    modifier = Modifier.graphicsLayer {
+                        val layoutInfo = listState.layoutInfo
+                        val visibleItem = layoutInfo.visibleItemsInfo.find { it.index == index }
+                        if (visibleItem != null) {
+                            val viewportCenter = layoutInfo.viewportStartOffset + layoutInfo.viewportSize.width / 2f
+                            val itemCenter = visibleItem.offset + visibleItem.size / 2f
+                            val distance = kotlin.math.abs(viewportCenter - itemCenter)
+                            
+                            val maxDistance = visibleItem.size.toFloat()
+                            val fraction = (distance / maxDistance).coerceIn(0f, 1f)
+                            
+                            val scale = (1 - fraction) * 1f + fraction * 0.82f
+                            val itemAlpha = (1 - fraction) * 1f + fraction * 0.5f
+                            
+                            scaleX = scale
+                            scaleY = scale
+                            this.alpha = itemAlpha
+                        } else {
+                            scaleX = 0.82f
+                            scaleY = 0.82f
+                            this.alpha = 0.5f
+                        }
+                    },
+                    onClick = { onWebsiteClick(website.url) }
+                )
+            }
         }
     }
 }
@@ -643,7 +660,7 @@ fun ViewAllModal(
 }
 
 @Composable
-fun SidebarOverlay(isOpen: Boolean, onClose: () -> Unit, onWebsiteClick: (String) -> Unit) {
+fun SidebarOverlay(isOpen: Boolean, onClose: () -> Unit, onWebsiteClick: (String) -> Unit, onSocialLinkClick: (String) -> Unit = {}) {
     var showAboutModal by remember { androidx.compose.runtime.mutableStateOf(false) }
     var showSiteIssuesModal by remember { androidx.compose.runtime.mutableStateOf(false) }
     var showHowToUseModal by remember { androidx.compose.runtime.mutableStateOf(false) }
@@ -796,8 +813,7 @@ fun SidebarOverlay(isOpen: Boolean, onClose: () -> Unit, onWebsiteClick: (String
         SocialModal(
             onClose = { showSocialModal = false },
             onLinkClick = { link ->
-                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(link))
-                context.startActivity(intent)
+                onSocialLinkClick(link)
                 showSocialModal = false
             }
         )

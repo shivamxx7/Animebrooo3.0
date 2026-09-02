@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.ui.HomeScreen
 import com.example.ui.WebViewScreen
+import com.example.ui.SocialWebViewScreen
 import com.example.ui.theme.MyApplicationTheme
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -67,6 +68,10 @@ fun AnimeBrowserApp(modifier: Modifier = Modifier) {
                 onWebsiteClick = { url ->
                     val encodedUrl = Base64.encodeToString(url.toByteArray(StandardCharsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP)
                     navController.navigate("webview/$encodedUrl")
+                },
+                onSocialLinkClick = { url ->
+                    val encodedUrl = Base64.encodeToString(url.toByteArray(StandardCharsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP)
+                    navController.navigate("social_webview/$encodedUrl")
                 }
             )
         }
@@ -79,6 +84,20 @@ fun AnimeBrowserApp(modifier: Modifier = Modifier) {
             }
             if (url.isNotEmpty()) {
                 WebViewScreen(
+                    url = url,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+        composable("social_webview/{url}") { backStackEntry ->
+            val encodedUrl = backStackEntry.arguments?.getString("url") ?: ""
+            val url = try {
+                String(Base64.decode(encodedUrl, Base64.URL_SAFE or Base64.NO_WRAP), StandardCharsets.UTF_8)
+            } catch (e: Exception) {
+                ""
+            }
+            if (url.isNotEmpty()) {
+                SocialWebViewScreen(
                     url = url,
                     onBack = { navController.popBackStack() }
                 )

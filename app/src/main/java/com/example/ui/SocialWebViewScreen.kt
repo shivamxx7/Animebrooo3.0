@@ -99,7 +99,25 @@ fun SocialWebViewScreen(url: String, onBack: () -> Unit) {
                         }
                     }
                     
-                    loadUrl(url)
+                                        var loadedInApp = false
+                    if (url.contains("instagram.com")) {
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            intent.setPackage("com.instagram.android")
+                            context.startActivity(intent)
+                            loadedInApp = true
+                            // Go back to previous screen since we opened external app
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                onBack()
+                            }, 500)
+                        } catch (e: Exception) {
+                            loadedInApp = false
+                        }
+                    }
+                    
+                    if (!loadedInApp) {
+                        loadUrl(url)
+                    }
                     webView = this
                 }
             }

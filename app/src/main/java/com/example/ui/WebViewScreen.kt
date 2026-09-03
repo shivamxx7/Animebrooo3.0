@@ -1,5 +1,11 @@
 package com.example.ui
 
+
+import android.provider.Settings
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
+import android.view.WindowManager
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
@@ -602,7 +608,37 @@ fun ControlPanelContent(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                var brightness by remember { mutableStateOf(activity?.window?.attributes?.screenBrightness?.takeIf { it >= 0f } ?: 0.5f) }
+                val getSystemBrightness = {
+                    try {
+                        Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS) / 255f
+                    } catch (e: Exception) {
+                        0.5f
+                    }
+                }
+                var brightness by remember { mutableStateOf(activity?.window?.attributes?.screenBrightness?.takeIf { it >= 0f } ?: getSystemBrightness()) }
+                
+                DisposableEffect(context) {
+                    val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+                        override fun onChange(selfChange: Boolean) {
+                            super.onChange(selfChange)
+                            brightness = getSystemBrightness()
+                            val layoutParams = activity?.window?.attributes
+                            if (layoutParams != null) {
+                                layoutParams.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                                activity?.window?.attributes = layoutParams
+                            }
+                        }
+                    }
+                    context.contentResolver.registerContentObserver(
+                        Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS),
+                        false,
+                        observer
+                    )
+                    onDispose {
+                        context.contentResolver.unregisterContentObserver(observer)
+                    }
+                }
+                
                 CustomVerticalSlider(
                     value = brightness,
                     onValueChange = {

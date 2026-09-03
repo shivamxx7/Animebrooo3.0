@@ -389,8 +389,8 @@ fun WebsiteCard(
         ) {
             val isAniwave = website.name.equals("Aniwave", ignoreCase = true)
             if (isAniwave) {
-                AsyncImage(
-                    model = R.drawable.logo_aniwave,
+                Image(
+                    painter = painterResource(id = R.drawable.logo_aniwave),
                     contentDescription = website.name,
                     modifier = Modifier.size(76.dp).clip(RoundedCornerShape(16.dp)),
                     contentScale = ContentScale.Crop
